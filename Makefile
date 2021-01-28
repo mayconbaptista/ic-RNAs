@@ -1,9 +1,3 @@
-test:
-	@gcc -c ./aux/extrair_dados.c -o extrair_dados.o
-	@gcc -c ./aux/test.c -o test.o
-	@gcc -o test.exe extrair_dados.o test.o
-	@./test.exe
-	
 cap3:
 	@gcc -c funcAtivacao.c -o funcAtivacao.o -lm
 	@gcc -c ./aux/extrair_dados.c -o extrair_dados.o

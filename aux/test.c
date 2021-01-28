@@ -12,4 +12,10 @@ int main (void)
     else
         printf("Erro!!\n");
     return 0;
+
+    data input;
+    printf("Entre com endereço: ");
+    setbuf(stdin,NULL);
+    fgets(input.end, 30, stdin);
+    
 }

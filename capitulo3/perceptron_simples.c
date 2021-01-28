@@ -11,41 +11,48 @@
 
 void imprime_pesos (double *vet, double bias)
 {
+    printf("Pesos: ");
     for(int i = 0; i < 3; i++)
     {
         printf("%.4lf ",vet[i]);
     }
-    printf("%.4lf\n",bias);
+    printf("bias: %.4lf\n",bias);
 }
 
 
 int supervisionado (RNA *rna,data *imput)
 {
-    if(rna == NULL || imput == NULL || imput == NULL)
+    if(rna == NULL || imput == NULL || imput->dados == NULL)
         return INVALID_IMPUT;
     else
     {
         int result;
         char erro = 'n';
-        for(int i = 0; i < imput->nlins; i++)// numero de epocas e msm linhas em dados
+        imprime_pesos(rna->pesos, rna->bias);
+        for(int cont = 0; cont < rna->epoca; cont++)
         {
-            imprime_pesos(rna->pesos, rna->bias);
-            result = fun_degral_bipolar (imput->dados[i], rna);
-            if(result != imput->dados[i][imput->ncols-1])
+            erro = 'n';
+            for(int i = 0; i < imput->nlins; i++)
             {
-                for(int j = 0; j < imput->ncols-1; j++)
-                    rna->pesos[j] += rna->taxa * (imput->dados[i][imput->ncols-1] - result) * imput->dados[i][j];
-                
-                rna->bias += rna->taxa * (imput->dados[i][imput->ncols-1] - result) * (-1);
-                erro = 's';
-            }   
-            else 
-                erro = 'n';
+                result = fun_degrau_bipolar (imput->dados[i], rna);
+                if(result != imput->dados[i][imput->ncols-1])
+                {
+                    for(int j = 0; j < imput->ncols-1; j++)
+                        rna->pesos[j] += rna->taxa * (imput->dados[i][imput->ncols-1] - result) * imput->dados[i][j];
+                    
+                    rna->bias += rna->taxa * (imput->dados[i][imput->ncols-1] - result) * (-1);
+                    erro = 's';
+                }
+            }
+            if(erro == 'n')
+            {
+                imprime_pesos(rna->pesos, rna->bias);
+                printf("convergil em %d épocas\n",cont);
+                return SUCESS;
+            }
+            
         }
-        if(erro == 'n')
-            return SUCESS;
-        else
-            return ERRO;
+        return ERRO;
     }
 }
 
@@ -55,7 +62,9 @@ int main (void)
     data input;
     int result;
 
-    printf("Entre con o enreço dos dados: ");
+    printf("Entre com o numero máximo de épocas: ");
+    scanf("%d",&rna.epoca);
+    printf("Entre con o endereço dos dados: ");
     setbuf(stdin, NULL);
     fgets(input.end, 30, stdin);
     printf("Entre com taxa de aprendizagem: ");
@@ -68,18 +77,18 @@ int main (void)
         exit(1);
     }
 
-    //imprime (input);
     rna.tam_pesos = input.ncols-1;
     rna.pesos = (double*) malloc (rna.tam_pesos*sizeof(double));// alocando o espaço para os pesos
 
     //inicializando os pesos e o bias 0<n<1;
+    srand(time(NULL));
     for(int i = 0; i < rna.tam_pesos; i++)
     {
         rna.pesos[i] = rand() % 1000;
         rna.pesos[i] /= 1000; 
     }
     rna.bias = rand () % 1000;
-    rna.bias /= 1000; 
+    rna.bias /= 1000;
 
     result = supervisionado(&rna, &input);
     if(result != SUCESS)
@@ -91,7 +100,7 @@ int main (void)
     }else
         printf("terinameno completado com sucesso!\n");//aqui
     
-    double vet[input.ncols-1];
+    double vet[rna.tam_pesos];
     char continua;
 
     do{
@@ -102,7 +111,7 @@ int main (void)
             scanf("%lf",&vet[i]);
         }
 
-        result = fun_degral_bipolar (vet, &rna);
+        result = fun_degrau_bipolar (vet, &rna);
         if(result == 1)
             printf("CLASSE A\n");
         else
@@ -112,8 +121,9 @@ int main (void)
         setbuf(stdin, NULL);
         scanf("%c",&continua);
     }while(continua != 'n');
-
+    
     free(rna.pesos);
     libera_dados (&input);
     return 0;
 }
+

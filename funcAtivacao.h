@@ -10,8 +10,8 @@ typedef struct dados_neuronios
     int epoca;
 }RNA;
 
-int fun_degral (double *dados,RNA *rna);
+int fun_degrau (double *dados,RNA *rna);
 
-int fun_degral_bipolar (double *dados,RNA *rna);
+int fun_degrau_bipolar (double *dados,RNA *rna);
 
 #endif
