@@ -34,7 +34,7 @@ int supervisionado (RNA *rna,data *imput)
             erro = 'n';
             for(int i = 0; i < imput->nlins; i++)
             {
-                result = fun_degrau_bipolar (imput->dados[i], rna);
+                result = fun_degrau_bipolar (imput->dados[i], (*rna));
                 if(result != imput->dados[i][imput->ncols-1])
                 {
                     for(int j = 0; j < imput->ncols-1; j++)
@@ -111,7 +111,7 @@ int main (void)
             scanf("%lf",&vet[i]);
         }
 
-        result = fun_degrau_bipolar (vet, &rna);
+        result = fun_degrau_bipolar (vet, rna);
         if(result == 1)
             printf("CLASSE A\n");
         else

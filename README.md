@@ -1,2 +1,1 @@
-# ic-RNAs
-iniciação cientifica
+# ic-RNAs e o projeto de iniciação cientifica todo o projeto e baseado no livro Redes neurais artificiais para engenharia e ciências aplicadas o trabalho será feito por Maycon douglas batista tendo como tutor Wendel de melo cada capitulo terá um projeto partico de implementação do tipo de rede proposta com um arquivo Makefile para compilação em Linux.
