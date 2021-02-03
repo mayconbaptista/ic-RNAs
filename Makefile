@@ -11,11 +11,13 @@ cap4:
 	@gcc -c ./capitulo4/perceptron_adaline.c -o perceptron_adaline.o 
 	@gcc -o cap4.exe funcAtivacao.o extrair_dados.o perceptron_adaline.o -lm
 	@echo "use ./cap4.exe para executar"
+	
 
 test:
 	@gcc -c ./aux/extrair_dados.c -o extrair_dados.o
-	@gcc -c ./aux/test.c -o test.o
-	@gcc -o test.exe extrair_dados.o test.o
+	@gcc -c ./aux/test.c -o test.o 
+	@gcc -o test.exe extrair_dados.o test.o -lm
+	@./test.exe
 
 clean:
 	@rm *.o
