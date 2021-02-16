@@ -26,15 +26,15 @@ int extrair (data *input)
             return -2;
         else
         {
-            fscanf(arg, "%d %d\n",&input->nlins,&input->ncols);
-            input->dados = (double**) malloc (input->nlins*sizeof(double*));
+            fscanf(arg, "%d %d\n",&input->N_amostras,&input->N_entradas);
+            input->dados = (double**) malloc (input->N_amostras*sizeof(double*));
 
-            for(int i = 0; i < input->nlins; i++)
-                input->dados[i] = (double*) malloc (input->ncols*(sizeof(double)));
+            for(int i = 0; i < input->N_amostras; i++)
+                input->dados[i] = (double*) malloc (input->N_entradas*(sizeof(double)));
 
-            for (int i = 0; i < input->nlins; i++)
+            for (int i = 0; i < input->N_amostras; i++)
             {
-                for(int j = 0; j < input->ncols; j++)
+                for(int j = 0; j < input->N_entradas; j++)
                 {
                     fscanf(arg,"%lf ",&input->dados[i][j]);
                 }
@@ -49,7 +49,7 @@ void libera_dados (data *input)
 {
     if(input != NULL)
     {
-        for(int i = 0; i < input->nlins; i++)
+        for(int i = 0; i < input->N_amostras; i++)
         {
             free(input->dados[i]);
         }
@@ -61,11 +61,12 @@ void imprime (data input)
 {
     if(input.dados != NULL)
     {
-        for(int i = 0; i < input.nlins; i++)
+        for(int i = 0; i < input.N_amostras; i++)
         {
-            for(int j = 0; j < input.ncols; j++)
+            for(int j = 0; j < input.N_entradas; j++)
             {
-                printf("(lin-%d/col-%d) %.4lf",i,j,input.dados[i][j]);
+                //printf("(lin-%d/col-%d) %.4lf",i,j,input.dados[i][j]);
+                printf("%.4lf ",input.dados[i][j]);
             }
             printf("\n");
         }

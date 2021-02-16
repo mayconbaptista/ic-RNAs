@@ -6,6 +6,37 @@
 #include "../aux/extrair_dados.h"
 #include "../funcAtivacao.h"
 
+int fun_degrau_bipolar (double *dados, RNA rna)
+{
+    double soma=0;
+    for(int i = 0; i < rna.tam_pesos; i++)
+        soma += (dados[i]) * (rna.pesos[i]);
+
+    soma = soma - rna.bias;
+    if(soma >= 0)
+        return 1;
+    else
+        return -1;
+}
+
+void teste_apendice2 (RNA rna)
+{
+    data input;
+    strcpy(input.end, "./aux/apendice2.txt\n");
+
+    int res = extrair(&input);
+    if(res == 0)
+    {
+        for(int i = 0; i < input.nlins; i++)
+        {
+            if(fun_degrau_bipolar(input.dados[i], rna) != input.dados[i][input.ncols-1])
+                printf("Erro linha %d\n",i+1);
+        }
+        libera_dados(&input);
+    }
+    return;
+}
+
 void test_pendice1 (RNA rna)
 {
     double vet[10][3] = {{-0.3665, 0.0620, 5.991},
@@ -61,14 +92,14 @@ void questao4 (RNA rna)
     return;
 }
 
-void acompanha (RNA rna)
+void acompanha (const RNA *rna)
 {
     printf("valor dos pesos: ");
-    for(int i = 0; i < rna.tam_pesos; i++)
+    for(int i = 0; i < rna->tam_pesos; i++)
     {
-        printf("%.4lf\t",rna.pesos[i]);
+        printf("%.4lf\t",rna->pesos[i]);
     }
-    printf("Bias %.4lf\n",rna.bias);
+    printf("Bias %.4lf\n",rna->bias);
     return;
 }
 
@@ -83,8 +114,7 @@ double funcao_EQM (RNA *rna,data *input)
         soma = soma - rna->bias;
         eqm += pow((input->dados[i][input->ncols-1] - soma),2);
     }
-    eqm = eqm / input->nlins; 
-    return eqm;
+    return (eqm /= input->nlins);
 }
 
 int adaline (RNA *rna)
@@ -109,13 +139,12 @@ int adaline (RNA *rna)
     }
     rna->bias = rand() % 1000;
     rna->bias /= 1000;
-    acompanha((*rna));// acompanha os valores dos pesos inicias
+    acompanha(rna);// acompanha os valores dos pesos inicias
 
-    double eqm_atual, eqm_ant, soma, sinal; // variaveis auxiliares
+    double eqm_atual=0, eqm_ant=0, soma; // variaveis auxiliares
     for(int cont = 0; cont < rna->epoca; cont++)
     {
         eqm_ant = funcao_EQM(rna, &input);
-        //printf("Eqm na epoca %d %.4lf\n",cont+1,eqm_atual);
         for(int i = 0; i < input.nlins; i++)
         {
             soma = 0;
@@ -133,7 +162,8 @@ int adaline (RNA *rna)
         eqm_atual = funcao_EQM (rna, &input);
         if(fabs(eqm_atual - eqm_ant) <= rna->precisao)
         {
-            acompanha((*rna));
+            acompanha(rna);
+            printf("eqm atual %.6lf anterior %.6lf\n",eqm_atual,eqm_ant);
             printf("Epocas %d\n",cont);
             libera_dados(&input);
             return 0; // sucesso
@@ -158,7 +188,7 @@ int main (void)
     rna.precisao = 0.000001;
 
     result = adaline(&rna);
-    questao4(rna);
+    teste_apendice2(rna);
     
     /*
     if(result == 0)

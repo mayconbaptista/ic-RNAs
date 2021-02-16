@@ -4,9 +4,9 @@
 struct entrada
 {
     double **dados;
-    int nlins;
-    int ncols;
-    char end[30]; 
+    int N_amostras;// tamanho linhas
+    int N_entradas;// tamanho de colunas
+    char end[30]; // endereço dos dados
 };
 typedef struct entrada data;
 

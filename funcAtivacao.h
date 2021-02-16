@@ -3,8 +3,8 @@
 
 typedef struct dados_neuronios
 {
-    double *pesos;
-    double bias;
+    double **pesos;
+    double *bias;
     double taxa;
     double precisao;
     int tam_pesos;
