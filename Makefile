@@ -11,7 +11,12 @@ cap4:
 	@gcc -c ./capitulo4/perceptron_adaline.c -o perceptron_adaline.o 
 	@gcc -o cap4.exe funcAtivacao.o extrair_dados.o perceptron_adaline.o -lm
 	@echo "use ./cap4.exe para executar"
-	
+
+cap5:
+	@gcc -c ./aux/extrair_dados.c -o extrair_dados.o
+	@gcc -c ./capitulo5/pmc5-8.c -o pmc5-8.o
+	@gcc -g -o cap5.exe extrair_dados.o pmc5-8.o -lm
+	@echo "use ./cap5.exe para executar"
 
 test:
 	@gcc -c ./aux/extrair_dados.c -o extrair_dados.o
