@@ -4,7 +4,6 @@
 #include <string.h>
 #include <time.h>
 #include "../aux/extrair_dados.h"
-#define NEPER 2.718281828459045
 #define CONCLUIDO 0
 #define INCONCLUIDO -1
 
@@ -26,17 +25,17 @@ void free_entrada_cmd2 (Neuronio *rna, data input);
 void inicializa_pesos (Neuronio *rna, data *input);
 void free_pesos (Neuronio *rna);
 
-// s (x) = 1/ 1 + e^(-u)
+// s (u) = 1/ 1 + e^(-0.5.u)
 double funcao_sigmoide (const double *input, const double *pesos, int tamanho)
 {
     double soma=0;
     for(int i = 0; i < tamanho; i++)
         soma += input[i] * pesos[i];
     soma -= pesos[tamanho]; // bias
-    return (1/pow((1 + NEPER), -soma));
+    return 1/ (1 +exp(-0.5*soma));
 }
 
-//  s'(x) = e^(-x)/(1 + e^-x)2   
+//  s'(x) = 0.5e^(-0.5x)/(1 + e^-0.5x)2   
 double derivada_sigmoide (double *amostras,double *pesos, int size)
 {
     double soma = 0;
@@ -45,7 +44,7 @@ double derivada_sigmoide (double *amostras,double *pesos, int size)
         soma += amostras[i] * pesos[i];
     }
     soma -= pesos[size];// bias
-    return (pow(NEPER, (-soma)) / pow(1 + pow(NEPER, (-soma)), 2));
+    return (0.5*exp(-0.5*soma))/pow(1 +exp(-0.5*soma),2);
 }
 
 
@@ -61,7 +60,7 @@ double erro_medio (const data *input, const Neuronio *rna)
             rna->input_cmd2[neur] = funcao_sigmoide(input->dados[amostra], rna->pesos_cmd1[neur], (input->N_entradas-1));
         }
         saida = funcao_sigmoide(rna->input_cmd2, rna->pesos_cmd2, rna->size_cmd1);
-        EM_geral += (pow((input->dados[amostra][input->N_entradas -1] - saida),2));
+        EM_geral += 0.5 * pow((input->dados[amostra][input->N_entradas -1] - saida),2);
     }
     EM_geral /= input->N_amostras;
     return EM_geral;
@@ -82,6 +81,7 @@ int treinamento (Neuronio *rna)
     double grd1, grd2;// vaiaveis auxiliares para o gradiente;
     inicializa_pesos(rna, &input);
     imprime_pesos(rna, input);
+    int aux=0;
     for(int epoca_atual = 0; epoca_atual < rna->max_epocas; epoca_atual++)
     {
         EM_ant = erro_medio (&input, rna);
@@ -94,14 +94,10 @@ int treinamento (Neuronio *rna)
             rna->saida = funcao_sigmoide(rna->input_cmd2, rna->pesos_cmd2, rna->size_cmd1);
             // 5.15
             grd2 = (input.dados[amostra][input.N_entradas -1] - rna->saida) * derivada_sigmoide(rna->pesos_cmd2, rna->pesos_cmd2, rna->size_cmd1);
-            printf("gradiente 2 %lf\n",grd2);
-
             // definição 5.17
             for(int w = 0; w < rna->size_cmd1; w++)
-            {
                 rna->pesos_cmd2[w] += rna->taxa * grd2 * rna->input_cmd2[w];  
-            }
-            //rna->pesos_cmd2[rna->size_cmd1] += rna->taxa * grd2 * (-1);// ajuste bias
+            rna->pesos_cmd2[rna->size_cmd1] += rna->taxa * grd2 * (-1);
 
             // definição 5.39
             for(int neur = 0; neur < rna->size_cmd1; neur++)
@@ -109,7 +105,6 @@ int treinamento (Neuronio *rna)
                 for(int peso = 0; peso < input.N_entradas-1; peso++)
                 {
                     grd1 = grd2 * rna->pesos_cmd2[peso] * derivada_sigmoide(input.dados[amostra], rna->pesos_cmd1[neur], input.N_entradas-1);
-                    printf("gradiente %lf\n",grd1);
                     rna->pesos_cmd1[neur][peso] += rna->taxa * grd1 * input.dados[amostra][peso];
                 }
                 rna->pesos_cmd1[neur][input.N_entradas-1] += rna->taxa * grd1 * (-1);
@@ -117,15 +112,22 @@ int treinamento (Neuronio *rna)
 
         }
         EM_atual = erro_medio (&input, rna);
-        printf("gradiente %.4lf\n",EM_ant);
+        /*
+        if(aux == 100)
+            printf("erro medio %.4lf\tgrd1 %.4lf\tgrd2 %.4lf\n",EM_atual,grd1,grd2);
+        else
+            aux++;
+        */
         if(fabs(EM_atual - EM_ant) <= rna->presizao)
         {
             printf("Epoca %d\n",epoca_atual);
+            imprime_pesos(rna, input);
             free(rna->input_cmd2);
             libera_dados(&input);
             return CONCLUIDO;
         }
     }
+    printf("erro medio %.4lf\tgradiente 1 %.4lf %.4lf\n",EM_atual,grd1,grd2);
     imprime_pesos(rna, input);
     free(rna->input_cmd2);
     libera_dados(&input);
@@ -139,7 +141,7 @@ int main (void)
     Neuronio rna;
     rna.presizao = 0.000001;
     rna.taxa = 0.1;
-    rna.max_epocas = 1;
+    rna.max_epocas = 100000;
     rna.size_cmd1 = 10;
 
 
@@ -180,12 +182,11 @@ void inicializa_pesos (Neuronio *rna, data *input)
         }
     }
     
-    for(int W = 0; W < rna->size_cmd1; W++)
+    for(int W = 0; W <= rna->size_cmd1; W++)
     {
         rna->pesos_cmd2[W] = rand() % 1000;
         rna->pesos_cmd2[W] /= 1000;
     }
-    rna->pesos_cmd2[rna->size_cmd1] = 0;
 
     // inicializando o vetor que sera entrada da ultima camada
     rna->input_cmd2 = (double*) malloc (rna->size_cmd1*sizeof(double));
@@ -207,7 +208,7 @@ void imprime_pesos (const Neuronio *rna,data input)
             printf("%.4lf\t",rna->pesos_cmd1[i][j]);
         printf("\n");
     }
-    for(int i = 0; i < rna->size_cmd1; i++)
+    for(int i = 0; i <= rna->size_cmd1; i++)
         printf("%.4lf\t",rna->pesos_cmd2[i]);
     printf("\n");
 }
