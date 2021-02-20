@@ -127,6 +127,7 @@ int treinamento (Neuronio *rna)
             }
         }
         EM_atual = erro_medio (&input, rna);
+        printf("Erro %.4lf",EM_atual);
         /*
         if(aux == 1000)
         {
@@ -167,7 +168,7 @@ void test (Neuronio *rna)
             }
             rna->saida = funcao_sigmoide(rna->input_cmd2, rna->pesos_cmd2, rna->size_cmd1);
             if(rna->saida != input.dados[amostra][input.N_entradas-1]);
-                printf("Erro amostra %d\n",amostra);
+                printf("Erro amostra %d\tsaida %lf\n",amostra,(rna->saida - input.dados[amostra][input.N_entradas-1]));
         }
         libera_dados(&input);
     }
