@@ -25,17 +25,17 @@ void free_entrada_cmd2 (Neuronio *rna, data input);
 void inicializa_pesos (Neuronio *rna, data *input);
 void free_pesos (Neuronio *rna);
 
-// s (u) = 1/ 1 + e^(-0.5.u)
+// s(u)= 1/1+e^(-u)
 double funcao_sigmoide (const double *input, const double *pesos, int tamanho)
 {
     double soma=0;
     for(int i = 0; i < tamanho; i++)
         soma += input[i] * pesos[i];
     soma -= pesos[tamanho]; // bias
-    return 1/ (1 +exp(-0.5*soma));
+    return 1/ (1 +exp(-soma));
 }
 
-//  s'(x) = 0.5e^(-0.5x)/(1 + e^-0.5x)2   
+//  s'(u)= e^(-u)/(i+e^(-u))^2 ;
 double derivada_sigmoide (double *amostras,double *pesos, int size)
 {
     double soma = 0;
@@ -44,7 +44,7 @@ double derivada_sigmoide (double *amostras,double *pesos, int size)
         soma += amostras[i] * pesos[i];
     }
     soma -= pesos[size];// bias
-    return (0.5*exp(-0.5*soma))/pow(1 +exp(-0.5*soma),2);
+    return exp(-soma)/pow(1 +exp(-soma),2);
 }
 
 
@@ -66,6 +66,17 @@ double erro_medio (const data *input, const Neuronio *rna)
     return EM_geral;
 }
 
+double erro_cmd2 (double grd_ant,double *pesos_cmd_ant, int size)
+{
+    double soma=0;
+    for(int w = 0; w < size; w++)
+    {
+        soma += grd_ant * pesos_cmd_ant[w];
+    }
+    soma -= pesos_cmd_ant[size];// bias
+    return (soma*(-1));
+}
+
 int treinamento (Neuronio *rna)
 {
     data input;
@@ -78,7 +89,7 @@ int treinamento (Neuronio *rna)
     }
 
     double EM_ant, EM_atual;// variaveis auxiliares para o erro medio
-    double grd1, grd2;// vaiaveis auxiliares para o gradiente;
+    double grd1, grd2, erro;// vaiaveis auxiliares para o gradiente;
     inicializa_pesos(rna, &input);
     imprime_pesos(rna, input);
     int aux=0;
@@ -87,34 +98,41 @@ int treinamento (Neuronio *rna)
         EM_ant = erro_medio (&input, rna);
         for(int amostra = 0; amostra < input.N_amostras; amostra++)
         {
+            //começo fasse foward
             for(int j = 0; j < rna->size_cmd1; j++)
             {
                 rna->input_cmd2[j] = funcao_sigmoide(input.dados[amostra], rna->pesos_cmd1[j],(input.N_entradas-1));
             }
             rna->saida = funcao_sigmoide(rna->input_cmd2, rna->pesos_cmd2, rna->size_cmd1);
+
+            // inicio fase backward
             // 5.15
             grd2 = (input.dados[amostra][input.N_entradas -1] - rna->saida) * derivada_sigmoide(rna->pesos_cmd2, rna->pesos_cmd2, rna->size_cmd1);
             // definição 5.17
             for(int w = 0; w < rna->size_cmd1; w++)
                 rna->pesos_cmd2[w] += rna->taxa * grd2 * rna->input_cmd2[w];  
             rna->pesos_cmd2[rna->size_cmd1] += rna->taxa * grd2 * (-1);
-
-            // definição 5.39
+    
+            // parte de 5.23 calculo do erro 
+            erro = erro_cmd2(grd2, rna->pesos_cmd2, rna->size_cmd1);
+            // 5.37 && 5.39
             for(int neur = 0; neur < rna->size_cmd1; neur++)
             {
                 for(int peso = 0; peso < input.N_entradas-1; peso++)
                 {
-                    grd1 = grd2 * rna->pesos_cmd2[peso] * derivada_sigmoide(input.dados[amostra], rna->pesos_cmd1[neur], input.N_entradas-1);
+                    grd1 = erro * derivada_sigmoide(input.dados[amostra], rna->pesos_cmd1[neur], input.N_entradas-1);
                     rna->pesos_cmd1[neur][peso] += rna->taxa * grd1 * input.dados[amostra][peso];
                 }
                 rna->pesos_cmd1[neur][input.N_entradas-1] += rna->taxa * grd1 * (-1);
             }
-
         }
         EM_atual = erro_medio (&input, rna);
         /*
-        if(aux == 100)
+        if(aux == 1000)
+        {
             printf("erro medio %.4lf\tgrd1 %.4lf\tgrd2 %.4lf\n",EM_atual,grd1,grd2);
+            aux = 0;
+        }
         else
             aux++;
         */
@@ -134,6 +152,29 @@ int treinamento (Neuronio *rna)
     return INCONCLUIDO;
 }
 
+void test (Neuronio *rna)
+{
+    data input;
+    strcpy(input.end, "./aux/apendice3_5-8.txt\n");
+    int res = extrair(&input);
+    if(res != 10)
+    {
+        for(int amostra = 0; amostra < input.N_amostras; amostra++)
+        {
+            for(int neur=0; neur < rna->size_cmd1; neur++)
+            {
+                rna->input_cmd2[neur] = funcao_sigmoide(input.dados[amostra], rna->pesos_cmd1[neur], input.N_entradas-1);
+            }
+            rna->saida = funcao_sigmoide(rna->input_cmd2, rna->pesos_cmd2, rna->size_cmd1);
+            if(rna->saida != input.dados[amostra][input.N_entradas-1]);
+                printf("Erro amostra %d\n",amostra);
+        }
+        libera_dados(&input);
+    }
+    else
+        printf("erro na leitura dos dados\n");
+}
+
 
 int main (void)
 {
@@ -148,11 +189,13 @@ int main (void)
     int result = treinamento (&rna);
     if(result == CONCLUIDO)
     {
-        printf("concluido com sucesso!\n");    
+        printf("concluido com sucesso!\n");
+        test(&rna);
     }
     else if(result == INCONCLUIDO)
     {
         printf("Treinamento incompleto!\n");
+        test(&rna);
     }
     free_pesos(&rna);
     return 0;
